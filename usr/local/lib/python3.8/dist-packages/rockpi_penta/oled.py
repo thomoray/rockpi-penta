@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 import time
-import misc
-import Adafruit_SSD1306
-from PIL import Image
-from PIL import ImageDraw
-from PIL import ImageFont
+from rockpi_penta import misc
+from board import SCL7, SDA7, D23
+import busio
+import adafruit_ssd1306
+from PIL import Image, ImageDraw, ImageFont
 
 font = {
     '10': ImageFont.truetype('fonts/DejaVuSansMono-Bold.ttf', 10),
@@ -13,14 +13,14 @@ font = {
     '14': ImageFont.truetype('fonts/DejaVuSansMono-Bold.ttf', 14),
 }
 
-misc.set_mode(23, 0)
+misc.set_mode(D23, 0)
 time.sleep(0.2)
-misc.set_mode(23, 1)
+misc.set_mode(D23, 1)
 
 
 def disp_init():
-    disp = Adafruit_SSD1306.SSD1306_128_32(rst=None, i2c_bus=7)
-    [getattr(disp, x)() for x in ('begin', 'clear', 'display')]
+    i2c = busio.I2C(SCL7, SDA7)
+    disp = adafruit_ssd1306.SSD1306_I2C(128, 32, i2c)
     return disp
 
 
@@ -31,15 +31,17 @@ except Exception:
     time.sleep(0.2)
     disp = disp_init()
 
-image = Image.new('1', (disp.width, disp.height))
+width = disp.width
+height = disp.height
+image = Image.new('1', (width, height))
 draw = ImageDraw.Draw(image)
 
 
 def disp_show():
     im = image.rotate(180) if misc.conf['oled']['rotate'] else image
     disp.image(im)
-    disp.display()
-    draw.rectangle((0, 0, disp.width, disp.height), outline=0, fill=0)
+    disp.show()
+    draw.rectangle((0, 0, width, height), outline=0, fill=0)
 
 
 def welcome():

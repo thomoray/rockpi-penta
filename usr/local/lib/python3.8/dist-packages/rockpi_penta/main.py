@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 import sys
-import fan
-import misc
+from rockpi_penta import fan, misc
 try:
-    import oled
+    from rockpi_penta import oled
     top_board = 1
 except Exception as ex:
     top_board = 0

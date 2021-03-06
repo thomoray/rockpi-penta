@@ -3,7 +3,8 @@ import re
 import os
 import sys
 import time
-import mraa  # pylint: disable=import-error
+import digitalio
+from board import D11
 import shutil
 import subprocess
 import multiprocessing as mp
@@ -25,9 +26,11 @@ lv2dc = OrderedDict({'lv3': 0, 'lv2': 0.25, 'lv1': 0.5, 'lv0': 0.75})
 
 def set_mode(pin, mode=1):
     try:
-        pin = mraa.Gpio(pin)
-        pin.dir(mraa.DIR_OUT)
-        pin.write(mode)
+        gpio = digitalio.DigitalInOut(pin)
+        if mode == 1:
+            gpio.Direction = digitalio.Direction.OUTPUT
+        else:
+            gpio.Direction = digitalio.Direction.INPUT
     except Exception as ex:
         print(ex)
 
@@ -104,11 +107,11 @@ def read_conf():
 
 def read_key(pattern, size):
     s = ''
-    pin11 = mraa.Gpio(11)
-    pin11.dir(mraa.DIR_IN)
+    button = digitalio.DigitalInOut(D11)
+    button.Direction = digitalio.Direction.INPUT
 
     while True:
-        s = s[-size:] + str(pin11.read())
+        s = s[-size:] + str(1 if button.value else 0)
         for t, p in pattern.items():
             if p.match(s):
                 return t

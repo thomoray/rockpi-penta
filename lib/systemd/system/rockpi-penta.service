@@ -3,10 +3,10 @@ Description=Rockpi SATA Hat
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 /usr/bin/rockpi-penta/main.py on
-ExecStop=/usr/bin/python3 /usr/bin/rockpi-penta/main.py off
+ExecStart=/usr/bin/python3 /usr/local/lib/python3.8/dist-packages/rockpi_penta/main.py on
+ExecStop=/usr/bin/python3 /usr/local/lib/python3.8/dist-packages/rockpi_penta/main.py off
 Restart=on-failure
-WorkingDirectory=/usr/bin/rockpi-penta
+WorkingDirectory=/usr/local/lib/python3.8/dist-packages/rockpi_penta
 
 [Install]
 WantedBy=multi-user.target

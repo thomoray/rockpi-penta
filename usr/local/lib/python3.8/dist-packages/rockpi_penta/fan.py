@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 import time
-import mraa  # pylint: disable=import-error
-import misc
+# import mraa  # pylint: disable=import-error
+import pwmio
+from board import PWM1
+from rockpi_penta import misc
 
-pin13 = mraa.Pwm(13)
-pin13.period_us(40)
-pin13.enable(True)
-
+pwm1 = pwmio.PWMOut(PWM1)
+pwm1.period_us = 40
+pwm1.enabled = True
 
 def read_temp():
     with open('/sys/class/thermal/thermal_zone0/temp') as f:
@@ -28,7 +29,7 @@ def get_dc(cache={}):
 def change_dc(dc, cache={}):
     if dc != cache.get('dc'):
         cache['dc'] = dc
-        pin13.write(dc)
+        pwm1.duty_cycle = dc
 
 
 def running():
