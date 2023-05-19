@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import re
-import os
+import datetime
 import sys
 import time
 import mraa  # pylint: disable=import-error
@@ -68,6 +68,10 @@ def read_conf():
         conf['fan']['lv1'] = cfg.getfloat('fan', 'lv1')
         conf['fan']['lv2'] = cfg.getfloat('fan', 'lv2')
         conf['fan']['lv3'] = cfg.getfloat('fan', 'lv3')
+        conf['fan']['linear'] = cfg.getboolean('fan', 'linear', fallback=False)
+        conf['fan']['silentmaxlv'] = float(cfg.get('fan', 'silentmaxlv', fallback='0.4').replace('%', 'e-2'))
+        conf['fan']['silentstart'] = datetime.datetime.strptime(cfg.get('fan', 'silentstart', fallback='22:00'), '%H:%M').time()
+        conf['fan']['silentend'] = datetime.datetime.strptime(cfg.get('fan', 'silentend', fallback='10:00'), '%H:%M').time()
         # key
         conf['key']['click'] = cfg.get('key', 'click')
         conf['key']['twice'] = cfg.get('key', 'twice')
@@ -152,11 +156,39 @@ def slider_sleep():
 
 
 def fan_temp2dc(t):
-    for lv, dc in lv2dc.items():
-        if t >= conf['fan'][lv]:
-            return dc
-    return 0.999
+    base_temp = conf['fan']['lv0']
+    if t <= base_temp:
+        return 0.999
 
+    if time_in_range(
+        conf['fan']['silentstart'],
+        conf['fan']['silentend'],
+        datetime.datetime.now().time(),
+    ):
+        min_dc = max(min(1 - conf['fan']['silentmaxlv'], 0.999), 0)
+    else:
+        min_dc = 0
+
+    if conf['fan']['linear']:
+        lv0 = lv2dc['lv0']
+        lv3 = lv2dc['lv3']
+        denominator = conf['fan']['lv3'] - base_temp
+        slope = (lv3 - lv0) / denominator if denominator > 0 else -0.05
+        dc = min(lv0, max(slope * (t - base_temp) + lv0, lv3))  # bound the speed
+    else:
+        for lv, dc in lv2dc.items():
+            if t >= conf['fan'][lv]:
+                break
+
+    return min(max(dc, min_dc), 0.999)
+
+def time_in_range(start, end, x):
+    """Return true if x is in the range [start, end]"""
+    # from https://stackoverflow.com/a/10748024
+    if start <= end:
+        return start <= x <= end
+    else:
+        return start <= x or x <= end
 
 def fan_switch():
     conf['run'].value = not(conf['run'].value)
